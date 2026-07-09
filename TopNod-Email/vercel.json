@@ -1,8 +1,5 @@
 {
   "version": 2,
-  "installCommand": "pnpm install",
-  "buildCommand": "cd artifacts/tempmail-40 && npx vite build --config vite.config.vercel.ts",
-  "outputDirectory": "artifacts/tempmail-40/dist",
   "rewrites": [
     {
       "source": "/(.*)",
