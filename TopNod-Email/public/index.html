@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TopNod Mail — Temporary Email Service</title>
+  <meta name="description" content="Get a free, instant temporary email address. No registration required. Protect your privacy with TopNod Mail.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-card: rgba(255, 255, 255, 0.03);
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-glow: rgba(99, 102, 241, 0.3);
+      --text-primary: #f0f0f5;
+      --text-secondary: #8888a0;
+      --text-muted: #555566;
+      --accent-primary: #6366f1;
+      --accent-secondary: #8b5cf6;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --gradient-main: linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4);
+      --gradient-subtle: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Ambient Background */
+    .ambient-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .ambient-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.15;
+      animation: float 20s ease-in-out infinite;
+    }
+
+    .ambient-orb:nth-child(1) {
+      width: 600px;
+      height: 600px;
+      background: var(--accent-primary);
+      top: -200px;
+      right: -100px;
+      animation-delay: 0s;
+    }
+
+    .ambient-orb:nth-child(2) {
+      width: 500px;
+      height: 500px;
+      background: var(--accent-secondary);
+      bottom: -150px;
+      left: -100px;
+      animation-delay: -7s;
+    }
+
+    .ambient-orb:nth-child(3) {
+      width: 400px;
+      height: 400px;
+      background: var(--accent-cyan);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation-delay: -14s;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      25% { transform: translate(30px, -40px) scale(1.05); }
+      50% { transform: translate(-20px, 20px) scale(0.95); }
+      75% { transform: translate(15px, 30px) scale(1.02); }
+    }
+
+    /* Grid Overlay */
+    .grid-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    /* Container */
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Navbar */
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--gradient-main);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+    }
+
+    .logo-text {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.5px;
+    }
+
+    .logo-text span {
+      background: var(--gradient-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-badge {
+      padding: 6px 14px;
+      border-radius: 100px;
+      background: var(--gradient-subtle);
+      border: 1px solid var(--border-subtle);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--accent-primary);
+      letter-spacing: 0.5px;
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 80px 0 50px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      background: var(--gradient-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 28px;
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    .hero-badge .dot {
+      width: 7px;
+      height: 7px;
+      background: var(--accent-emerald);
+      border-radius: 50%;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    }
+
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 64px);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -2px;
+      margin-bottom: 20px;
+      animation: fadeInUp 0.6s ease-out 0.1s both;
+    }
+
+    .hero h1 .gradient-text {
+      background: var(--gradient-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 520px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+      font-weight: 300;
+      animation: fadeInUp 0.6s ease-out 0.2s both;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Email Generator Card */
+    .email-card {
+      max-width: 620px;
+      margin: 0 auto 80px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 36px;
+      backdrop-filter: blur(20px);
+      animation: fadeInUp 0.6s ease-out 0.3s both;
+      transition: border-color 0.3s ease;
+    }
+
+    .email-card:hover {
+      border-color: var(--border-glow);
+    }
+
+    .email-card-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .email-display {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      transition: border-color 0.3s;
+    }
+
+    .email-display:hover {
+      border-color: var(--border-glow);
+    }
+
+    .email-display .email-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--gradient-main);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .email-display .email-address {
+      flex: 1;
+      font-size: 17px;
+      font-weight: 500;
+      color: var(--text-primary);
+      letter-spacing: -0.3px;
+      font-family: 'Inter', monospace;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .email-display .copy-btn {
+      padding: 10px 20px;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: 10px;
+      color: var(--accent-primary);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .copy-btn:hover {
+      background: rgba(99, 102, 241, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .copy-btn:active {
+      transform: scale(0.97);
+    }
+
+    .email-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-primary {
+      flex: 1;
+      padding: 14px 24px;
+      background: var(--gradient-main);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .btn-secondary {
+      padding: 14px 24px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+    }
+
+    /* Inbox */
+    .inbox-section {
+      max-width: 620px;
+      margin: 0 auto 80px;
+      animation: fadeInUp 0.6s ease-out 0.4s both;
+    }
+
+    .inbox-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .inbox-header h2 {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+
+    .inbox-count {
+      padding: 4px 12px;
+      background: rgba(99, 102, 241, 0.1);
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent-primary);
+    }
+
+    .inbox-empty {
+      text-align: center;
+      padding: 60px 20px;
+      background: var(--bg-card);
+      border: 1px dashed var(--border-subtle);
+      border-radius: 16px;
+    }
+
+    .inbox-empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.4;
+    }
+
+    .inbox-empty h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+    }
+
+    .inbox-empty p {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .refresh-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--border-subtle);
+      border-top-color: var(--accent-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Features */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 80px;
+      animation: fadeInUp 0.6s ease-out 0.5s both;
+    }
+
+    .feature-card {
+      padding: 28px 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+      border-color: var(--border-glow);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+
+    .feature-icon.purple { background: rgba(99, 102, 241, 0.1); }
+    .feature-icon.cyan { background: rgba(6, 182, 212, 0.1); }
+    .feature-icon.emerald { background: rgba(16, 185, 129, 0.1); }
+
+    .feature-card h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      letter-spacing: -0.3px;
+    }
+
+    .feature-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 30px 0;
+      border-top: 1px solid var(--border-subtle);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .footer a {
+      color: var(--accent-primary);
+      text-decoration: none;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      padding: 12px 24px;
+      background: var(--accent-primary);
+      color: white;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 100;
+      transition: transform 0.3s ease;
+      box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .features {
+        grid-template-columns: 1fr;
+      }
+
+      .hero { padding: 50px 0 30px; }
+      .email-card { padding: 24px; }
+      .email-actions { flex-direction: column; }
+
+      .email-display {
+        flex-wrap: wrap;
+      }
+
+      .email-display .email-address {
+        font-size: 14px;
+      }
+
+      .nav-badge { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient-bg">
+    <div class="ambient-orb"></div>
+    <div class="ambient-orb"></div>
+    <div class="ambient-orb"></div>
+  </div>
+  <div class="grid-overlay"></div>
+
+  <div class="container">
+    <!-- Navbar -->
+    <nav class="navbar">
+      <a href="/" class="logo">
+        <div class="logo-icon">✉️</div>
+        <div class="logo-text">TopNod<span>Mail</span></div>
+      </a>
+      <div class="nav-badge">🔒 Encrypted & Private</div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-badge">
+        <div class="dot"></div>
+        Service Active
+      </div>
+      <h1>Temporary Email,<br><span class="gradient-text">Instant & Private</span></h1>
+      <p>Get a disposable email address instantly. No sign-up, no personal data, no hassle. Protect your real inbox from spam.</p>
+    </section>
+
+    <!-- Email Generator -->
+    <div class="email-card">
+      <div class="email-card-label">Your Temporary Email</div>
+      <div class="email-display">
+        <div class="email-icon">📧</div>
+        <div class="email-address" id="emailAddress">—</div>
+        <button class="copy-btn" id="copyBtn" onclick="copyEmail()">Copy</button>
+      </div>
+      <div class="email-actions">
+        <button class="btn-primary" id="generateBtn" onclick="generateEmail()">⚡ Generate New Email</button>
+        <button class="btn-secondary" onclick="generateEmail()">🔄 Refresh</button>
+      </div>
+    </div>
+
+    <!-- Inbox -->
+    <div class="inbox-section">
+      <div class="inbox-header">
+        <h2>📥 Inbox</h2>
+        <div class="inbox-count" id="inboxCount">0 messages</div>
+      </div>
+      <div class="inbox-empty">
+        <div class="inbox-empty-icon">📭</div>
+        <h3>No messages yet</h3>
+        <p>Incoming emails will appear here automatically</p>
+        <div class="refresh-indicator">
+          <div class="spinner"></div>
+          Checking for new messages...
+        </div>
+      </div>
+    </div>
+
+    <!-- Features -->
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon purple">🔒</div>
+        <h3>100% Private</h3>
+        <p>No registration required. Your identity stays completely anonymous.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon cyan">⚡</div>
+        <h3>Instant Setup</h3>
+        <p>Get a working email address in under a second. No waiting around.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon emerald">🛡️</div>
+        <h3>Spam Protection</h3>
+        <p>Keep your real inbox clean. Use temp emails for sign-ups and trials.</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>© 2026 TopNodMail — Built with ❤️ by <a href="#">Otsiru</a></p>
+    </footer>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">✅ Email copied to clipboard!</div>
+
+  <script>
+    const domains = ['topnod.email', 'catchmail.dev', 'tempnod.io'];
+    let currentEmail = '';
+
+    function randomString(length) {
+      const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      let result = '';
+      for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    }
+
+    function generateEmail() {
+      const user = randomString(10);
+      const domain = domains[Math.floor(Math.random() * domains.length)];
+      currentEmail = `${user}@${domain}`;
+      document.getElementById('emailAddress').textContent = currentEmail;
+
+      const btn = document.getElementById('generateBtn');
+      btn.textContent = '✅ Generated!';
+      setTimeout(() => { btn.textContent = '⚡ Generate New Email'; }, 1200);
+    }
+
+    function copyEmail() {
+      if (!currentEmail) return;
+      navigator.clipboard.writeText(currentEmail).then(() => {
+        showToast();
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = '✅';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+      });
+    }
+
+    function showToast() {
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => { toast.classList.remove('show'); }, 2500);
+    }
+
+    // Auto-generate on load
+    generateEmail();
+  </script>
+</body>
+</html>
