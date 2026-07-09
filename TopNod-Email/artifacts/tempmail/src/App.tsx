@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Terminal, RefreshCw, Trash2, Shield, Zap, ClipboardList, KeyRound } from 'lucide-react';
 import { SlotGrid, type Slot } from './components/SlotGrid';
-import { generateEmail } from './lib/tempmail';
+import { createInbox } from './lib/tempmail';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -29,7 +29,7 @@ function Home() {
     return Array.from({ length: 10 }, (_, i) => ({
       id: i + 1,
       email: null,
-      domain: 'Auto-Best',
+      token: null,
       code: '',
       loadingCode: false,
     }));
@@ -64,19 +64,29 @@ function Home() {
     setSlots(current => current.map(s => s.id === id ? { ...s, ...updates } : s));
   };
 
-  const generateAll = () => {
-    setSlots(current => current.map(s => ({
-      ...s,
-      email: generateEmail(s.domain),
-      code: '',
-      loadingCode: false,
-    })));
+  const generateAll = async () => {
+    if (generatingAll) return;
+    setGeneratingAll(true);
+    // Snapshot ids so results map back to the right slot regardless of order.
+    const ids = slots.map(s => s.id);
+    setSlots(current => current.map(s => ({ ...s, email: null, token: null, code: '', loadingCode: false })));
+    const results = await Promise.allSettled(ids.map(() => createInbox()));
+    setSlots(current => current.map(s => {
+      const idx = ids.indexOf(s.id);
+      const r = idx >= 0 ? results[idx] : undefined;
+      if (r && r.status === 'fulfilled') {
+        return { ...s, email: r.value.address, token: r.value.token, code: '', loadingCode: false };
+      }
+      return s;
+    }));
+    setGeneratingAll(false);
   };
 
   const resetAll = () => {
     setSlots(current => current.map(s => ({
       ...s,
       email: null,
+      token: null,
       code: '',
       loadingCode: false,
     })));

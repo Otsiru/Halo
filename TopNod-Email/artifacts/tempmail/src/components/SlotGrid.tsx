@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Copy, RefreshCw, Zap, Check, Mail } from 'lucide-react';
-import { DOMAINS, generateEmail, fetchVerificationCode } from '../lib/tempmail';
+import { createInbox, fetchVerificationCode } from '../lib/tempmail';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export type Slot = {
   id: number;
   email: string | null;
-  domain: string;
+  token: string | null;
   code: string;
   loadingCode: boolean;
 };
@@ -53,21 +53,22 @@ function SlotCard({
   const [polling, setPolling] = useState(false);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [manualLoading, setManualLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   const inFlightRef = useRef(false);
-  const emailRef = useRef(slot.email);
+  const tokenRef = useRef(slot.token);
   const codeRef = useRef(slot.code);
 
-  useEffect(() => { emailRef.current = slot.email; }, [slot.email]);
+  useEffect(() => { tokenRef.current = slot.token; }, [slot.token]);
   useEffect(() => { codeRef.current = slot.code; }, [slot.code]);
 
-  const doFetch = useCallback(async (email: string) => {
+  const doFetch = useCallback(async (token: string) => {
     if (inFlightRef.current) return;
     inFlightRef.current = true;
     try {
-      const result = await fetchVerificationCode(email);
+      const result = await fetchVerificationCode(token);
       setLastChecked(new Date());
-      if (emailRef.current === email && result.code) {
+      if (tokenRef.current === token && result.code) {
         updateSlot(slot.id, { code: result.code });
       }
     } catch {
@@ -77,20 +78,20 @@ function SlotCard({
     }
   }, [slot.id, updateSlot]);
 
-  // Auto-poll when email exists and no code yet
+  // Auto-poll when a token exists and no code yet
   useEffect(() => {
-    if (!slot.email || slot.code) { setPolling(false); return; }
+    if (!slot.token || slot.code) { setPolling(false); return; }
     setPolling(true);
-    doFetch(slot.email);
+    doFetch(slot.token);
     const id = setInterval(() => {
-      const email = emailRef.current;
+      const token = tokenRef.current;
       const code = codeRef.current;
-      if (!email || code) { clearInterval(id); setPolling(false); return; }
-      doFetch(email);
+      if (!token || code) { clearInterval(id); setPolling(false); return; }
+      doFetch(token);
     }, POLL_INTERVAL_MS);
     return () => { clearInterval(id); setPolling(false); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slot.email]);
+  }, [slot.token]);
 
   useEffect(() => { if (slot.code) setPolling(false); }, [slot.code]);
 
@@ -108,25 +109,30 @@ function SlotCard({
     setTimeout(() => setCodeCopied(false), 1500);
   };
 
-  const handleDomainChange = (newDomain: string) => {
-    updateSlot(slot.id, { domain: newDomain, email: null, code: '', loadingCode: false });
+  const handleGenerate = async () => {
+    if (generating) return;
+    setGenerating(true);
     setLastChecked(null);
-  };
-
-  const handleGenerate = () => {
-    updateSlot(slot.id, { email: generateEmail(slot.domain), code: '', loadingCode: false });
-    setLastChecked(null);
+    updateSlot(slot.id, { email: null, token: null, code: '', loadingCode: false });
+    try {
+      const inbox = await createInbox();
+      updateSlot(slot.id, { email: inbox.address, token: inbox.token, code: '', loadingCode: false });
+    } catch {
+      // ignore — user can retry
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const handleManualRefresh = async () => {
-    if (!slot.email || manualLoading) return;
-    const emailAtStart = slot.email;
+    if (!slot.token || manualLoading) return;
+    const tokenAtStart = slot.token;
     setManualLoading(true);
     inFlightRef.current = false;
     try {
-      const result = await fetchVerificationCode(emailAtStart);
+      const result = await fetchVerificationCode(tokenAtStart);
       setLastChecked(new Date());
-      if (emailRef.current === emailAtStart && result.code) {
+      if (tokenRef.current === tokenAtStart && result.code) {
         updateSlot(slot.id, { code: result.code });
       }
     } catch {
@@ -146,13 +152,9 @@ function SlotCard({
         <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
           Slot {slot.id}
         </span>
-        <select
-          value={slot.domain}
-          onChange={e => handleDomainChange(e.target.value)}
-          className="bg-background border border-border text-xs py-1 px-2 rounded-md cursor-pointer outline-none focus:border-cyan-500 text-cyan-400 font-mono transition-colors"
-        >
-          {DOMAINS.map(d => <option key={d} value={d}>{d}</option>)}
-        </select>
+        <span className="text-[10px] font-mono text-cyan-400/70 uppercase tracking-wider">
+          tempmail.lol
+        </span>
       </div>
 
       {/* Email display */}
@@ -187,13 +189,15 @@ function SlotCard({
       <div className="flex gap-3 mb-3">
         <button
           onClick={handleGenerate}
-          className="flex-1 cursor-pointer bg-amber-600/10 hover:bg-amber-600/20 text-amber-500 border border-amber-600/20 hover:border-amber-600/40 font-semibold text-xs py-2 rounded-md flex items-center justify-center gap-1.5 transition-all"
+          disabled={generating}
+          className="flex-1 cursor-pointer bg-amber-600/10 hover:bg-amber-600/20 disabled:opacity-50 disabled:cursor-not-allowed text-amber-500 border border-amber-600/20 hover:border-amber-600/40 font-semibold text-xs py-2 rounded-md flex items-center justify-center gap-1.5 transition-all"
         >
-          <Zap className="w-3.5 h-3.5" /> Generate
+          {generating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+          {generating ? 'Membuat…' : 'Generate'}
         </button>
         <button
           onClick={handleManualRefresh}
-          disabled={!slot.email || manualLoading}
+          disabled={!slot.token || manualLoading}
           title="Cek inbox sekarang"
           className="flex-1 cursor-pointer bg-cyan-600 hover:bg-cyan-500 disabled:bg-secondary disabled:text-muted-foreground disabled:border-transparent text-white font-semibold text-xs py-2 rounded-md flex items-center justify-center gap-1.5 transition-all border border-cyan-500/20 disabled:cursor-not-allowed"
         >

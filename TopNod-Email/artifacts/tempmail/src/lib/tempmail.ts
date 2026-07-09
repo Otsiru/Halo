@@ -1,51 +1,28 @@
-export const DOMAINS = [
-  'Auto-Best',
-  'nodkucluk.store',
-  'nodkucluk.online',
-  'nodkucluk.space',
-  'nodkucluk.sbs',
-  'nodkucluk.fun',
-] as const;
+// TempMail.lol API (via the api-server proxy).
+// The free tier does NOT let you choose the address/domain — the server
+// returns a random address plus an access token used to read the inbox.
 
-export type Domain = typeof DOMAINS[number];
+export interface CreatedInbox {
+  address: string;
+  token: string;
+}
 
-const REAL_DOMAINS = DOMAINS.slice(1) as readonly string[];
-
-const NAME_WORDS = [
-  'budi', 'adi', 'reza', 'fajar', 'dian', 'rian', 'eko', 'agus', 'hendra', 'toni',
-  'yudi', 'andi', 'bayu', 'doni', 'gilang', 'hadi', 'ivan', 'joko', 'kevin', 'luki',
-  'mario', 'nando', 'rafi', 'sandi', 'taruna', 'surya', 'rama', 'dewa', 'arya', 'yoga',
-  'febri', 'rizki', 'fauzi', 'irfan', 'wahyu', 'galih', 'aziz', 'hamid', 'fikri', 'andra',
-];
-
-const NAME_SUFFIXES = [
-  'ja', 'na', 'ta', 'ra', 'ka', 'sa', 'da', 'ma', 'wa', 'to',
-  'no', 'di', 'wo', 'ri', 'ro', 'ni', 'nto', 'ndi', 'nta', 'wi',
-];
-
-const pick = <T>(arr: readonly T[]): T =>
-  arr[Math.floor(Math.random() * arr.length)];
-
-export const generateUsername = (): string => {
-  const word = pick(NAME_WORDS);
-  const suffix = Math.random() > 0.4 ? pick(NAME_SUFFIXES) : '';
-  const digits = Math.floor(Math.random() * 9000) + 1000;
-  return `${word}${suffix}${digits}`;
+// Create a new random inbox. Returns the address and its access token.
+export const createInbox = async (): Promise<CreatedInbox> => {
+  const res = await fetch('/api/tempmail/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  if (!res.ok) throw new Error(`Create error ${res.status}`);
+  return res.json();
 };
 
-const randomDomain = () => pick(REAL_DOMAINS);
-
-export const generateEmail = (domain: string = 'Auto-Best'): string => {
-  const username = generateUsername();
-  const resolved = domain === 'Auto-Best' ? randomDomain() : domain;
-  return `${username}@${resolved}`;
-};
-
-// Fetch the latest verification code via the catchmail.io-backed proxy.
+// Fetch the latest verification code for an inbox using its token.
 export const fetchVerificationCode = async (
-  email: string
-): Promise<{ code: string | null; count: number; subject?: string }> => {
-  const url = `/api/inbox?address=${encodeURIComponent(email)}`;
+  token: string
+): Promise<{ code: string | null; count: number; subject?: string; expired?: boolean }> => {
+  const url = `/api/tempmail/messages?token=${encodeURIComponent(token)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Proxy error ${res.status}`);
   return res.json();
