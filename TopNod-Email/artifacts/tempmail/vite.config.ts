@@ -5,6 +5,8 @@ import { defineConfig } from 'vite';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
+import { tempmailApiPlugin } from './vite-tempmail-plugin';
+
 const rawPort = process.env.PORT;
 
 if (!rawPort) {
@@ -33,6 +35,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),
+    tempmailApiPlugin(),
     ...(process.env.NODE_ENV !== 'production' &&
     process.env.REPL_ID !== undefined
       ? [
