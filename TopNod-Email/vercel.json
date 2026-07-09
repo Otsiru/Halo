@@ -1,11 +1,6 @@
 {
   "version": 2,
-  "buildCommand": null,
-  "outputDirectory": "public",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
+  "installCommand": "echo skip",
+  "buildCommand": "echo skip",
+  "outputDirectory": "public"
 }
